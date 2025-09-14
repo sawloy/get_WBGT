@@ -6,8 +6,8 @@ app = Flask(__name__)
 
 @app.get("/extract")
 def extract():
-    url = request.args.get("url")
-    selector = request.args.get("selector")
+    url = request.args.get("https://www.wbgt.env.go.jp/graph_ref_td.php?region=10&prefecture=82&point=82056")
+    selector = request.args.get("#dataarea > table > tbody > tr:nth-child(3) > td > div > div.value.num_lv3 > span.present_num")
     if not url or not selector:
         return jsonify({"error": "url and selector are required"}), 400
 
