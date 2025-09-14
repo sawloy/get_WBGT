@@ -5,24 +5,23 @@ from bs4 import BeautifulSoup
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False  # 保持 UTF-8
 
-@app.get("/extract")
-def extract():
+@app.get("/extract_all")
+def extract_all():
     url = request.args.get("url")
-    selector = request.args.get("selector")
-    if not url or not selector:
-        return jsonify({"error": "url and selector are required"}), 400
+    if not url:
+        return jsonify({"error": "url is required"}), 400
 
     r = requests.get(url, timeout=15, headers={"User-Agent":"Mozilla/5.0"})
     r.raise_for_status()
     soup = BeautifulSoup(r.text, "html.parser")
     
-    # ✅ 改成 select() 获取所有匹配的元素
+    # ✅ 组合选择器：匹配所有 wbgt1 ~ wbgt5
+    selector = ".wbgt1, .wbgt2, .wbgt3, .wbgt4, .wbgt5"
     elements = soup.select(selector)
     if not elements:
-        return jsonify({"error": "selector not found"}), 404
+        return jsonify({"error": "no elements found"}), 404
 
-    # 提取每个元素的纯文本，去掉多余空格
+    # 把所有值提取出来
     texts = [el.get_text(strip=True) for el in elements]
 
-    # 返回 JSON 数组
     return jsonify({"results": texts})
