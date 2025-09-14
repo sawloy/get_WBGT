@@ -21,7 +21,21 @@ def extract_all():
     if not elements:
         return jsonify({"error": "no elements found"}), 404
 
-    # 把所有值提取出来
-    texts = [el.get_text(strip=True) for el in elements]
+    # 提取文本并转换为数字
+    values = []
+    for el in elements:
+        txt = el.get_text(strip=True)
+        try:
+            values.append(float(txt))  # 转成 float，方便比较
+        except ValueError:
+            pass  # 万一不是数字就跳过
 
-    return jsonify({"results": texts})
+    if not values:
+        return jsonify({"error": "no numeric values found"}), 404
+
+    max_value = max(values)
+
+    return jsonify({
+        "values": values,   # 数组
+        "max": max_value    # 最大值
+    })
