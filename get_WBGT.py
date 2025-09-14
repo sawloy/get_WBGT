@@ -20,4 +20,4 @@ def extract():
         return jsonify({"error": "selector not found"}), 404
 
     text = el.get_text(strip=True)
-    return jsonify({"text": text})
+    return Response(text, mimetype="text/plain; charset=utf-8")
