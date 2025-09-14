@@ -3,7 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 
 app = Flask(__name__)
-app.config['JSON_AS_ASCII'] = False  # 让返回保持 UTF-8，不转义成 \uXXXX
+app.config['JSON_AS_ASCII'] = False  # 保持 UTF-8
 
 @app.get("/extract")
 def extract():
@@ -15,9 +15,14 @@ def extract():
     r = requests.get(url, timeout=15, headers={"User-Agent":"Mozilla/5.0"})
     r.raise_for_status()
     soup = BeautifulSoup(r.text, "html.parser")
-    el = soup.select_one(selector)
-    if not el:
+    
+    # ✅ 改成 select() 获取所有匹配的元素
+    elements = soup.select(selector)
+    if not elements:
         return jsonify({"error": "selector not found"}), 404
 
-    text = el.get_text(strip=True)
-    return jsonify({"text": text})
+    # 提取每个元素的纯文本，去掉多余空格
+    texts = [el.get_text(strip=True) for el in elements]
+
+    # 返回 JSON 数组
+    return jsonify({"results": texts})
