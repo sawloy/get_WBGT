@@ -22,24 +22,25 @@ def extract_all():
         return jsonify({"error": "no elements found"}), 404
 
     values = []
-
     for el in elements:
         txt = el.get_text(strip=True)
         try:
             number = float(txt)
             values.append(number)
         except ValueError:
-            # 没有数字 → 记为 0
-            values.append(0.0)
+            values.append(0.0)  # 空值用 0 填充
 
-    # 计算最大值及其位置
     max_value = max(values)
-    max_index = values.index(max_value)  # 返回第一个最大值的位置 (从 0 开始)
-    max_time = max_index * 3        # 用顺序乘以 3 估算几点
+
+    # 找到所有最大值的索引
+    max_indices = [i for i, v in enumerate(values) if v == max_value]
+
+    # 把索引转换成时间（索引 * 3 小时）
+    max_times = [f"{(i+1) * 3}時" for i in max_indices]
 
     return jsonify({
-        "values": values,           # 全部值（空 → 0）
-        "max": max_value,           # 最大值
-        "max_index": max_index,     # 最大值在数组中的位置
-        "max_time": f"{max_time}時"  # 对应时间（粗略）
+        "values": values,        # 全部值
+        "max": max_value,        # 最大值
+        "max_indices": max_indices,  # 所有最大值的位置
+        "max_times": max_times       # 所有最大值对应的时间（数组）
     })
