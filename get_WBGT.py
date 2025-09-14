@@ -16,7 +16,7 @@ def extract_all():
     soup = BeautifulSoup(r.text, "html.parser")
     
     # ✅ 组合选择器：匹配所有 wbgt1 ~ wbgt5
-    selector = ".wbgt1, .wbgt2, .wbgt3, .wbgt4, .wbgt5"
+    selector = ".wbgt0, .wbgt1, .wbgt2, .wbgt3, .wbgt4, .wbgt5"
     elements = soup.select(selector)
     if not elements:
         return jsonify({"error": "no elements found"}), 404
