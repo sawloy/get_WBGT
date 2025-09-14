@@ -1,10 +1,9 @@
 from flask import Flask, request, jsonify
-from flask import Response
 import requests
 from bs4 import BeautifulSoup
 
 app = Flask(__name__)
-app.config['JSON_AS_ASCII'] = False   # 关键：返回 JSON 时不要把非 ASCII 字符转义
+app.config['JSON_AS_ASCII'] = False  # 让返回保持 UTF-8，不转义成 \uXXXX
 
 @app.get("/extract")
 def extract():
@@ -21,4 +20,4 @@ def extract():
         return jsonify({"error": "selector not found"}), 404
 
     text = el.get_text(strip=True)
-    return Response(text, mimetype="text/plain; charset=utf-8")
+    return jsonify({"text": text})
