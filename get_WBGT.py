@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 
 app = Flask(__name__)
+app.config['JSON_AS_ASCII'] = False   # 关键：返回 JSON 时不要把非 ASCII 字符转义
 
 @app.get("/extract")
 def extract():
