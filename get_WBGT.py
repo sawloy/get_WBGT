@@ -1,9 +1,23 @@
 from flask import Flask, request, jsonify
 import requests
 from bs4 import BeautifulSoup
+from flask_cors import CORS
 
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False  # 保持 UTF-8
+
+#开启 CORS
+CORS(app, resources={
+    r"/*": {
+        "origins": [
+            "*",  # 先允许所有域调试成功，再根据需要收紧
+            "https://excel.officeapps.live.com",
+            "https://*.officeapps.live.com",
+            "https://*.sharepoint.com",
+            "https://*.office.com",
+        ]
+    }
+}, supports_credentials=False)
 
 @app.get("/extract_all")
 def extract_all():
