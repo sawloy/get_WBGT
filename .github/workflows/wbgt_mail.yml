@@ -3,7 +3,7 @@ name: WBGT Mail Sender
 on:
   schedule:
     # 每30分钟运行一次 (UTC 时间)
-    - cron: "*/30 * * * *"
+    - cron: "*/1 * * * *"
   workflow_dispatch:  # 允许手动触发测试
 
 jobs:
