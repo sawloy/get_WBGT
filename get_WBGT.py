@@ -53,8 +53,8 @@ def extract_all():
     max_times = [f"{(i+1) * 3}時" for i in max_indices]
 
     return jsonify({
-        "values": values,        # 全部值
+        #"values": values,        # 全部值
         "max": max_value,        # 最大值
-        "max_indices": max_indices,  # 所有最大值的位置
+        #"max_indices": max_indices,  # 所有最大值的位置
         "max_times": max_times       # 所有最大值对应的时间（数组）
     })
