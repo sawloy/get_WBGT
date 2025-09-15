@@ -1,41 +1,50 @@
-name: WBGT Mail Sender        # 这个工作流的名字，在 Actions 页面显示
+name: WBGT Mail Sender
 
-on:                          # 定义触发条件
-  schedule:                  # 定时触发
-    # 每 5 分钟运行一次（注意：UTC 时间，不是日本时间）
-    - cron: "*/5 * * * *"
-  workflow_dispatch:         # 保留手动触发按钮，方便你测试
+on:
+  schedule:
+    - cron: "*/5 * * * *"     # 每 5 分钟（UTC）
+  workflow_dispatch:          # 保留手动触发
 
-jobs:                        # 定义要执行的任务
-  send:                      # job 的名字，随便起
-    runs-on: ubuntu-latest   # 选择运行环境，这里用最新的 Ubuntu
-    concurrency:             # 并发控制
-      group: wbgt-mail       # 同一 group 的任务只跑一个
-      cancel-in-progress: true  # 如果上一次还没跑完，取消它再跑新的
-    timeout-minutes: 5       # 整个 job 最多跑 5 分钟，避免挂死
-    steps:                   # 步骤列表
-      - uses: actions/checkout@v4  # 第一步：拉取当前仓库代码
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: wbgt-mail
+      cancel-in-progress: true   # 上一轮没结束就取消，避免重叠
+    timeout-minutes: 5           # 整个作业最长 5 分钟
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v5  # 安装 Python 运行环境
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.11'       # 指定 Python 版本
+          python-version: '3.11'
 
       - name: Install dependencies
-        run: |                        # 安装依赖
+        run: |
           python -m pip install --upgrade pip
-          pip install requests        # 只需要 requests，因为 smtplib 是标准库
+          pip install requests
 
-      - name: Run mail script with auto-retry  # 执行发送脚本，带自动重试
-        uses: nick-invision/retry@v2  # 使用第三方 Action 实现重试逻辑
+      # ✅ API 预检：能拿到 JSON 的开头再继续，避免无意义发信重试
+      - name: Precheck API reachability
+        run: |
+          set -e
+          echo "Checking API..."
+          curl -sS -H "User-Agent: Mozilla/5.0" \
+            "https://get-wbgt.onrender.com/extract_all?url=https://www.wbgt.env.go.jp/graph_ref_td.php%3Fregion=10%26prefecture=82%26point=82056" \
+            | head -c 400
+
+      # ✅ 运行发送脚本；脚本内部自带 3 次重试（见第2步）
+      - name: Run mail script (script has internal retry)
+        uses: nick-invision/retry@v2
         with:
-          timeout_minutes: 2          # 每次尝试最多跑 2 分钟
-          max_attempts: 3             # 最多重试 3 次（共最多跑 3 次）
-          retry_on: error             # 遇到报错才重试
-          command: python send_json_mail.py  # 要执行的命令
-        env:                          # 给脚本传入环境变量（从 GitHub Secrets 取值）
-          SMTP_HOST: ${{ secrets.SMTP_HOST }}  # SMTP 服务器
-          SMTP_PORT: ${{ secrets.SMTP_PORT }}  # SMTP 端口（587）
-          SMTP_USER: ${{ secrets.SMTP_USER }}  # 发件邮箱
-          SMTP_PASS: ${{ secrets.SMTP_PASS }}  # 邮箱密码/应用专用密码
-          TO_ADDR:   ${{ secrets.TO_ADDR }}    # 收件邮箱（Power Automate 监控的邮箱）
+          timeout_minutes: 3     # 单次最多 3 分钟
+          max_attempts: 1        # 外层不再多次重试，交给脚本内部
+          retry_on: error
+          command: python send_json_mail.py
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          TO_ADDR:   ${{ secrets.TO_ADDR }}
