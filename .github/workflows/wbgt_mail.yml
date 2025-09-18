@@ -2,7 +2,7 @@ name: WBGT Mail Sender
 
 on:
   schedule:
-    - cron: "*/5 * * * *"     # 每 5 分钟（UTC）
+    - cron: "0 * * * *"     # 每 5 分钟（UTC）
   workflow_dispatch:          # 保留手动触发
 
 jobs:
