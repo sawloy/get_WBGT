@@ -1,31 +1,41 @@
+# ----------------------------------------
+# GitHub Actions Workflow: WBGT Mail Sender
+# 功能：每小时运行一次 send_json_mail.py，
+# 从 Render API 获取 WBGT 数据并通过邮件发送。
+# ----------------------------------------
+
 name: WBGT Mail Sender
 
 on:
   schedule:
-    - cron: "0 * * * *"     # 每 5 分钟（UTC）
-  workflow_dispatch:          # 保留手动触发
+    - cron: "0 * * * *"     # 每小时整点（UTC）运行一次
+  workflow_dispatch:          # 支持手动执行（可在 Actions 页面点 Run workflow）
 
 jobs:
-  send:
-    runs-on: ubuntu-latest
+  send:                        # 定义名为 "send" 的任务
+    runs-on: ubuntu-latest     # 使用 GitHub 提供的最新 Ubuntu 运行环境
     concurrency:
-      group: wbgt-mail
-      cancel-in-progress: true   # 上一轮没结束就取消，避免重叠
-    timeout-minutes: 5           # 整个作业最长 5 分钟
-    steps:
+      group: wbgt-mail         # 并发组名（防止任务重叠）
+      cancel-in-progress: true # 若上一次任务还没结束，则取消旧的再执行新的
+    timeout-minutes: 5         # 整个任务最多执行 5 分钟
+
+    steps:                     # 任务的执行步骤列表
       - uses: actions/checkout@v4
+        # 第一步：把当前仓库的代码检出到虚拟机环境中
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+        # 第二步：设置 Python 环境（版本 3.11）
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install requests
+        # 第三步：安装依赖（升级 pip，并安装 requests 库）
 
-      # ✅ API 预检：能拿到 JSON 的开头再继续，避免无意义发信重试
+      # ✅ 预检 API：确保 Render API 可访问，避免无意义重试
       - name: Precheck API reachability
         run: |
           set -e
@@ -33,13 +43,15 @@ jobs:
           curl -sS -H "User-Agent: Mozilla/5.0" \
             "https://get-wbgt.onrender.com/extract_all?url=https://www.wbgt.env.go.jp/graph_ref_td.php%3Fregion=10%26prefecture=82%26point=82056" \
             | head -c 400
+        # 第四步：用 curl 请求 API，截取返回前 400 个字符
+        # 若无法访问则直接报错并停止整个任务
 
-      # ✅ 运行发送脚本；脚本内部自带 3 次重试（见第2步）
+      # ✅ 运行邮件发送脚本（send_json_mail.py）
       - name: Run mail script (script has internal retry)
         uses: nick-invision/retry@v2
         with:
-          timeout_minutes: 3     # 单次最多 3 分钟
-          max_attempts: 1        # 外层不再多次重试，交给脚本内部
+          timeout_minutes: 3     # 单次脚本最长运行 3 分钟
+          max_attempts: 1        # 外层只尝试一次（内部已自带 3 次重试）
           retry_on: error
           command: python send_json_mail.py
         env:
@@ -48,3 +60,7 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           TO_ADDR:   ${{ secrets.TO_ADDR }}
+        # 第五步：执行邮件发送脚本
+        # - 使用 nick-invision/retry 插件控制重试机制
+        # - 从仓库 Secrets 读取 SMTP 配置和收件人邮箱
+        # - send_json_mail.py 内部会执行三次重试逻辑并发出邮件
