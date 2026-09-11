@@ -4,6 +4,9 @@ import requests                              # requests：发送 HTTP 请求
 from bs4 import BeautifulSoup                # BeautifulSoup：解析 HTML 内容
 from flask_cors import CORS                  # CORS：解决跨域访问问题
 
+# 20260911新增：引入发邮件脚本
+import send_json_mail
+
 # ---------------------------
 # 初始化 Flask 应用
 # ---------------------------
@@ -72,3 +75,17 @@ def extract_all():
         # "max_indices": max_indices, # 最大值所在的索引（调试用）
         "max_times": max_times       # 对应的时间（可能有多个）
     })
+
+# 20260911新增：发邮件入口
+@app.get("/send_mail")
+def send_mail():
+    result = send_json_mail.main()
+    if result == 0:
+        return jsonify({
+            "status": "ok",
+            "message": "WBGT mail sent successfully"
+        }), 200
+    return jsonify({
+        "status": "error",
+        "message": "WBGT mail sending failed"
+    }), 500
