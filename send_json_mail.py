@@ -86,7 +86,7 @@ def send_json(data: dict, filename="point_82056.json"):
     log(f"[smtp] connecting to {SMTP_HOST}:{SMTP_PORT} as {SMTP_USER}")
 
     # 建立安全连接并发送邮件
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as server:
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
         server.starttls(context=ssl.create_default_context())  # 启用 TLS 加密
         server.login(SMTP_USER, SMTP_PASS)                     # 登录邮箱
         server.send_message(msg)                               # 发送邮件
